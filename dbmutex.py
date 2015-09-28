@@ -16,8 +16,7 @@ class Client(object):
         data = str(data)
         # Meta data
         self.db[key] = data
-        self.db.close()
-        self.db = MainBody.open(self.filename)
+        self.db.sync()
 
     def Get(self, key):
         key = str(key)
@@ -25,11 +24,9 @@ class Client(object):
             # Meta data
             return self.db[key]
         finally:
-            self.db.close()
-            self.db = MainBody.open(self.filename)
+            self.db.sync()
 
     def Remove(self, key):
         key = str(key)
         del self.db[key]
-        self.db.close()
-        self.db = MainBody.open(self.filename)
+        self.db.sync()
