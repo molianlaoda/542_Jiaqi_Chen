@@ -1,5 +1,6 @@
-import simplejson as json
-import bsddb
+import os
+import sys
+import cPickle
 from UserDict import DictMixin
 
 # Try using cPickle and cStringIO if available.
@@ -9,7 +10,7 @@ except ImportError:
     from StringIO import StringIO
 
 
-__all__ = ['open', 'FakeDict']
+__all__ = ['fakeopen', 'FakeDict']
 __author__ = 'Chan'
 
 
@@ -21,76 +22,77 @@ class FakeDict(DictMixin):
     Highly recommended to synchronize every times fetching or modifying data.
     The value of the 'dict' should be able to dump by simplejson.
     """
-    def __init__(self, dict, writeback = True):
+    def __init__(self, filename):
         # Cache trace the modification of mutable entries.
-        self.dict = dict
-        self.writeback = writeback
-        self.cache = {}
+        self.filename = filename
+        try:
+            self.dbfile = open(filename, 'r')
+            self.alldata = cPickle.load(self.dbfile)
+            # print str(sys.getsizeof(cPickle.dumps(self.alldata)))+'!'
+            self.dbfile.close()
+        except (IOError, ValueError) as e:
+            print e
+            self.alldata = {'metadata': {}}
 
     def __getitem__(self, key):
         try:
-            value = self.cache[key]
+            return bytearray(self.alldata[key])
         except KeyError:
-            io = StringIO(self.dict[key])
-            value = json.load(io)
-            if self.writeback:
-                self.cache[key] = value
-        return value
+            print 'No key named: ' + key
 
     def __setitem__(self, key, value):
-        if self.writeback:
-            self.cache[key] = value
-        io = StringIO()
-        json.dump(value, io)
-        self.dict[key] = io.getvalue()
+        assert sys.getsizeof(value) <= 1048576, 'The size of the bytearray must be smaller or equal to 1MB!'
+        dumps_value = cPickle.dumps(value)
+        self.alldata[key] = dumps_value
+        self.alldata['metadata'][key] = sys.getsizeof(value)
 
     def __len__(self):
-        return len(self.dict)
+        return len(self.alldata)
 
     def __delitem__(self, key):
         try:
-            del self.dict[key]
+            del self.alldata[key]
+            del self.alldata['metadata'][key]
         except KeyError:
             pass
 
-        try:
-            del self.cache[key]
-        except KeyError:
-            pass
+    def getMeta(self, key):
+        return self.alldata['metadata'][key]
 
     def keys(self):
-        return self.dict.keys()
+        return self.alldata.keys()
 
     def sync(self):
-        if self.writeback and len(self.cache):
-            # If there are records in cache, synchronize them and put cache to empty.
-            for key, value in self.cache.iteritems():
-                self[key] = value
-            self.cache = {}
-        if hasattr(self.dict, 'sync'):
-            self.dict.sync()
-        else:
-            print 'Cannot syncronized.'
+        self.dbfile = open(self.filename, 'w')
+        cPickle.dump(self.alldata, self.dbfile, protocol=1)
+        self.dbfile.close()
 
     def close(self):
         # Synchronize with .db file on disk when closing.
         try:
             self.sync()
-            try:
-                self.dict.close()
-            except AttributeError:
-                pass
         finally:
-            self.dict = None
+            self.alldata = None
 
 
-def open(filename, openstyle = 'c', writeback = True):
-    dbf = bsddb.hashopen(filename, flag = openstyle)
-    return FakeDict(dbf, writeback)
+def fakeopen(filename):
+    return FakeDict(filename)
 
-test = open('/Users/Chan/Desktop/Test.db')
-print test
-test['0'] = str(bytearray('1'))
+test = fakeopen('/Users/Chan/Desktop/Test01.db')
+test['A'] = bytearray(1048000)
+print sys.getsizeof(cPickle.dumps(bytearray(1048000)))
+test['B'] = bytearray(1048000)
+test['C'] = bytearray(1048000)
+test['D'] = bytearray(1048000)
+test['E'] = bytearray(1048000)
 test.close()
-test = open('/Users/Chan/Desktop/Test.db')
-print test
+
+print os.path.getsize('/Users/Chan/Desktop/Test01.db')
+
+test = fakeopen('/Users/Chan/Desktop/Test01.db')
+print len(test['A'])
+test.close()
+
+test = fakeopen('/Users/Chan/Desktop/Test01.db')
+print len(test['A'])
+test.close()
