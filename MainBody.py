@@ -24,6 +24,7 @@ class FakeDict(DictMixin):
     """
     def __init__(self, filename):
         # Cache trace the modification of mutable entries.
+        self.key = ''
         self.filename = filename
         try:
             self.dbfile = open(filename, 'r')
@@ -41,6 +42,7 @@ class FakeDict(DictMixin):
             print 'No key named: ' + key
 
     def __setitem__(self, key, value):
+        self.key = key
         assert sys.getsizeof(value) <= 1048576, 'The size of the bytearray must be smaller or equal to 1MB!'
         dumps_value = cPickle.dumps(value)
         self.alldata[key] = dumps_value
@@ -65,7 +67,16 @@ class FakeDict(DictMixin):
     def sync(self):
         self.dbfile = open(self.filename, 'w')
         cPickle.dump(self.alldata, self.dbfile, protocol=1)
+        if os.path.getsize(self.filename) > 4*1024*1024:
+            print 'File size exceeds the line!'
+            del self[self.key]
         self.dbfile.close()
+
+    def clearall(self):
+        key_list = self.keys()
+        for key in key_list:
+            if key != 'metadata':
+                del self[key]
 
     def close(self):
         # Synchronize with .db file on disk when closing.
@@ -80,19 +91,25 @@ def fakeopen(filename):
 
 test = fakeopen('/Users/Chan/Desktop/Test01.db')
 test['A'] = bytearray(1048000)
-print sys.getsizeof(cPickle.dumps(bytearray(1048000)))
+test.sync()
 test['B'] = bytearray(1048000)
+test.sync()
 test['C'] = bytearray(1048000)
+test.sync()
 test['D'] = bytearray(1048000)
-test['E'] = bytearray(1048000)
+test.sync()
+del test['B']
+test['E'] = bytearray(1048000/2)
+test['F'] = bytearray(1048000)
+test.sync()
+del test['C']
+test['G'] = bytearray(1048000)
+test.sync()
+del test['E']
+test['H'] = bytearray(1048000)
+test.sync()
+test.clearall()
 test.close()
 
 print os.path.getsize('/Users/Chan/Desktop/Test01.db')
 
-test = fakeopen('/Users/Chan/Desktop/Test01.db')
-print len(test['A'])
-test.close()
-
-test = fakeopen('/Users/Chan/Desktop/Test01.db')
-print len(test['A'])
-test.close()
