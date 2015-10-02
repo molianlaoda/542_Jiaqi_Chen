@@ -18,9 +18,14 @@ class FakeDict(DictMixin):
     """
     A dictionary-like object.
     It will synchronize with file on disk every time it closes.
+<<<<<<< Updated upstream
     With writeback = True, instruction like dict[key].append(data) will be record. Otherwise it will not.
     Highly recommended to synchronize every times fetching or modifying data.
     The value of the 'dict' should be able to dump by simplejson.
+=======
+    Highly recommended to synchronize every times fetching or modifying data.
+    The value of the 'dict' should be able to dump by cPickle.
+>>>>>>> Stashed changes
     """
     def __init__(self, filename):
         # Cache trace the modification of mutable entries.
@@ -29,7 +34,10 @@ class FakeDict(DictMixin):
         try:
             self.dbfile = open(filename, 'r')
             self.alldata = cPickle.load(self.dbfile)
+<<<<<<< Updated upstream
             # print str(sys.getsizeof(cPickle.dumps(self.alldata)))+'!'
+=======
+>>>>>>> Stashed changes
             self.dbfile.close()
         except (IOError, ValueError) as e:
             print e
@@ -37,6 +45,10 @@ class FakeDict(DictMixin):
 
     def __getitem__(self, key):
         try:
+<<<<<<< Updated upstream
+=======
+            print "successfully get item " + str(key)
+>>>>>>> Stashed changes
             return bytearray(self.alldata[key])
         except KeyError:
             print 'No key named: ' + key
@@ -69,6 +81,10 @@ class FakeDict(DictMixin):
         cPickle.dump(self.alldata, self.dbfile, protocol=1)
         if os.path.getsize(self.filename) > 4*1024*1024:
             print 'File size exceeds the line!'
+<<<<<<< Updated upstream
+=======
+            print 'Rolling back...'
+>>>>>>> Stashed changes
             del self[self.key]
         self.dbfile.close()
 
@@ -88,6 +104,7 @@ class FakeDict(DictMixin):
 
 def fakeopen(filename):
     return FakeDict(filename)
+<<<<<<< Updated upstream
 
 test = fakeopen('/Users/Chan/Desktop/Test01.db')
 test['A'] = bytearray(1048000)
@@ -113,3 +130,5 @@ test.close()
 
 print os.path.getsize('/Users/Chan/Desktop/Test01.db')
 
+=======
+>>>>>>> Stashed changes
