@@ -43,4 +43,3 @@ Shrek 2,2004,DVD,Fantasy,Andrew Adamson, Vicky Jenson,Ted Elliott,USA,DreamWorks
 The Silence of the Lambs,1991,VHS,Thriller,Jonathan Demme,Ted Tally,USA,Orion,$15.00,0343
 Wall Street,1987,VHS,Drama,Oliver Stone,Stanley G. Weiser,USA,20th Century Fox,$15.00,0410
 When Harry Met Sally...,1989,LaserDisc,Romance,Rob Reiner,Nora Ephron,USA,Columbia Pictures,$15.00,0418
-The Abyss,1970,LaserDisc,Science Fiction,James Cameron,James Cameron,USA,20th Century Fox,$0.00
