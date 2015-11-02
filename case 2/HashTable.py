@@ -1,3 +1,4 @@
+import ReadFile
 __author__ = 'Chan'
 
 
@@ -33,6 +34,8 @@ class HashTable(object):
 
     def Get(self, data_value):
         assert data_value is not None, "Data value must be valid."
+        locate_file = ReadFile.ReadFile()
+        locate_file.readFile('data.txt')
         hash_value = int(bin(self.__BKDRHash(str(data_value)[2:]))[-3:], base=2)
         candidates = self.table[hash_value]
         results = []
@@ -40,14 +43,14 @@ class HashTable(object):
             if data_value == candidates[idx][0]:
                 results.append(candidates[idx][1])
 
-        return results
+        return [' '.join(locate_file.content[int(i)])[:-1] for i in results]
 
     def Remove(self, key):
         assert key is not None, "Key must be valid."
         for idx in range(self.buckets_number):
-            for idx2 in self.table[idx]:
-                if self.table[idx][idx2] == key:
+            for idx2 in range(len(self.table[idx])):
+                if self.table[idx][idx2][1] == key:
                     self.table[idx].pop(idx2)
                     return
-        print('Key: %d does not exist.' % key)
+        print('Key: %s does not exist.' % key)
         return
